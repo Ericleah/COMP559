@@ -34,21 +34,71 @@ def graphlet_kernel(graph1, graph2, k):
     return dot_product / (magnitude1 * magnitude2)
 
 # Load MOLT-4 dataset (dummy implementation)
-def load_molt4_dataset():
+def load_molt4_dataset(base_path):
     """
-    Generates a larger random graph dataset for testing.
+    Loads the MOLT-4 dataset from the given base path with progress tracking.
     """
+    print("Loading graph indicator...")
+    start_time = time.time()
+    with open(f"{base_path}/MOLT-4_graph_indicator.txt", "r") as f:
+        graph_indicator = [int(line.strip()) for line in f]
+    print(f"Graph indicator loaded in {time.time() - start_time:.2f} seconds.")
+
+    print("Loading node labels...")
+    start_time = time.time()
+    with open(f"{base_path}/MOLT-4_node_labels.txt", "r") as f:
+        node_labels = [int(line.strip()) for line in f]
+    print(f"Node labels loaded in {time.time() - start_time:.2f} seconds.")
+
+    print("Loading graph labels...")
+    start_time = time.time()
+    with open(f"{base_path}/MOLT-4_graph_labels.txt", "r") as f:
+        graph_labels = [int(line.strip()) for line in f]
+    print(f"Graph labels loaded in {time.time() - start_time:.2f} seconds.")
+
+    print("Loading edges...")
+    start_time = time.time()
+    with open(f"{base_path}/MOLT-4_A.txt", "r") as f:
+        edges = [tuple(map(int, line.strip().split(", "))) for line in f]
+    print(f"Edges loaded in {time.time() - start_time:.2f} seconds.")
+
+    print("Loading edge labels (if available)...")
+    edge_labels = None
+    try:
+        start_time = time.time()
+        with open(f"{base_path}/MOLT-4_edge_labels.txt", "r") as f:
+            edge_labels = [int(line.strip()) for line in f]
+        print(f"Edge labels loaded in {time.time() - start_time:.2f} seconds.")
+    except FileNotFoundError:
+        print("Edge labels file not found. Proceeding without edge labels.")
+
+    print("Constructing graphs...")
+    start_time = time.time()
     graphs = []
-    for _ in range(10):  # 10 graphs
-        G = nx.erdos_renyi_graph(n=30, p=0.1)  # Random graph with 30 nodes and 10% edge probability
-        # Assign random labels to nodes and edges
-        for node in G.nodes():
-            G.nodes[node]['label'] = np.random.randint(0, 3)  # Random node labels
-        for edge in G.edges():
-            G.edges[edge]['label'] = np.random.randint(0, 2)  # Random edge labels
-        # Assign a class label to the graph
-        G.graph['label'] = np.random.randint(0, 2)
+    num_graphs = max(graph_indicator)
+    for graph_id in range(1, num_graphs + 1):
+        # Print progress every 100 graphs
+        if graph_id % 100 == 0:
+            print(f"Processing graph {graph_id}/{num_graphs}...")
+
+        # Create a new graph
+        G = nx.Graph()
+        # Add nodes with labels
+        node_ids = [i for i, gid in enumerate(graph_indicator, start=1) if gid == graph_id]
+        for node_id in node_ids:
+            G.add_node(node_id, label=node_labels[node_id - 1])
+        # Add edges with labels (if available)
+        for idx, (u, v) in enumerate(edges):
+            if graph_indicator[u - 1] == graph_id and graph_indicator[v - 1] == graph_id:
+                if edge_labels:
+                    G.add_edge(u, v, label=edge_labels[idx])
+                else:
+                    G.add_edge(u, v)
+        # Assign the graph label
+        G.graph['label'] = graph_labels[graph_id - 1]
         graphs.append(G)
+
+    print(f"All graphs constructed in {time.time() - start_time:.2f} seconds.")
     return graphs
 
 # Evaluate running time for different values of k
@@ -97,7 +147,8 @@ def compare_similarity(graphs):
 # Main function
 if __name__ == "__main__":
     # Load dataset
-    graphs = load_molt4_dataset()
+    base_path = "as1/MOLT-4"
+    graphs = load_molt4_dataset(base_path)
 
     # Evaluate running time
     print("Running Time Evaluation:")
