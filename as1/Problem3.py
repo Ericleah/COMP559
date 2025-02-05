@@ -3,6 +3,7 @@ from itertools import combinations
 from collections import defaultdict
 import numpy as np
 import time
+import matplotlib.pyplot as plt
 
 # Helper function to count subgraphs of size k
 def count_subgraphs(graph, k):
@@ -112,6 +113,39 @@ def evaluate_running_time(graphs):
             count_subgraphs(graph, k)
         print(f"k = {k}, Time = {time.time() - start_time:.2f} seconds")
 
+def plot_similarity_distributions(similarities_same, similarities_diff):
+    """
+    Plots the distribution of similarity scores using box plots.
+    """
+    plt.figure(figsize=(8, 6))
+    
+    # Combine similarity scores into a list of lists
+    data = [similarities_same, similarities_diff]
+    
+    # Create a box plot
+    box = plt.boxplot(
+        data,
+        patch_artist=True,
+        labels=['Same Class', 'Different Classes'],
+        widths=0.6,
+        showfliers=False  # Hide outliers for cleaner visualization
+    )
+    
+    # Customize colors and style
+    colors = ['#1f77b4', '#ff7f0e']
+    for patch, color in zip(box['boxes'], colors):
+        patch.set_facecolor(color)
+    
+    plt.title('Similarity Comparison Between Graph Classes', fontsize=14)
+    plt.ylabel('Graphlet Kernel Similarity', fontsize=12)
+    plt.xticks(fontsize=10)
+    plt.yticks(fontsize=10)
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    
+    # Save the plot as an image
+    plt.savefig('similarity_comparison.png', dpi=300, bbox_inches='tight')
+    plt.show()
+
 # Compare similarity between graphs in the same and different classes
 def compare_similarity(graphs):
     """
@@ -143,6 +177,8 @@ def compare_similarity(graphs):
     # Analyze results
     print(f"Same Class: Mean = {np.mean(similarities_same_class)}, Std = {np.std(similarities_same_class)}")
     print(f"Different Class: Mean = {np.mean(similarities_diff_class)}, Std = {np.std(similarities_diff_class)}")
+    # Plot the distribution of similarity scores
+    plot_similarity_distributions(similarities_same_class, similarities_diff_class)
 
 # Main function
 if __name__ == "__main__":
@@ -150,9 +186,9 @@ if __name__ == "__main__":
     base_path = "as1/MOLT-4"
     graphs = load_molt4_dataset(base_path)
 
-    # Evaluate running time
-    print("Running Time Evaluation:")
-    evaluate_running_time(graphs)
+    # # Evaluate running time
+    # print("Running Time Evaluation:")
+    # evaluate_running_time(graphs)
 
     # Compare similarity
     print("\nSimilarity Comparison:")
